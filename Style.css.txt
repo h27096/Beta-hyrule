@@ -1,0 +1,40 @@
+body {
+  margin:0;
+  overflow:hidden;
+  background:#87CEEB;
+  font-family:monospace;
+}
+
+canvas {
+  display:block;
+  margin:auto;
+  background:#6dbf4b;
+}
+
+#ui {
+  position:absolute;
+  top:10px;
+  left:10px;
+  font-size:18px;
+  background:rgba(255,255,255,0.7);
+  padding:6px 10px;
+  border-radius:8px;
+}
+
+#touchControls {
+  position:absolute;
+  bottom:20px;
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  padding:0 20px;
+}
+
+.dpad button,
+.actions button {
+  font-size:20px;
+  padding:12px;
+  margin:5px;
+  border-radius:8px;
+  border:none;
+}
