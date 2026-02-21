@@ -1,65 +1,115 @@
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+// ===== PLAYER =====
+let player = {
+    x: 200,
+    y: 200,
+    size: 20,
+    speed: 3
+};
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-const tileSize = 48;
-
-let keys = {};
-let arrows = 10;
-let hearts = 3;
-let hasKey = 0;
-let shieldActive = false;
-let facing = "down";
+let hearts = 5;
 let invincible = false;
 
-let player = {
-  x: tileSize * 5,
-  y: tileSize * 5,
-  speed: 3
-};
+let arrows = 5;
 
+let shieldActive = false;
+let shieldDurability = 3;
+
+// ===== ENEMY =====
 let enemy = {
-  x: tileSize * 10,
-  y: tileSize * 6,
-  alive: true
+    x: 400,
+    y: 200,
+    size: 25,
+    speed: 1.2,
+    health: 3,
+    dead: false,
+    deathTimer: 0,
+    active: true
 };
 
-let door = {
-  x: tileSize * 14,
-  y: tileSize * 5,
-  locked: true
-};
+// ===== DUNGEON =====
+let hasKey = false;
+let doorLocked = true;
 
-let keyItem = {
-  x: tileSize * 8,
-  y: tileSize * 4,
-  collected: false
-};
+let keys = {};
 
-let arrowsShot = [];
+// ===== CONTROLS =====
+document.addEventListener("keydown", (e) => {
+    keys[e.key] = true;
 
-function drawTile(x,y,color){
-  ctx.fillStyle=color;
-  ctx.fillRect(x,y,tileSize,tileSize);
+    if (e.key === "Shift") shieldActive = true;
+
+    if (e.key === " ") attackSword();
+    if (e.key === "f") shootArrow();
+});
+
+document.addEventListener("keyup", (e) => {
+    keys[e.key] = false;
+    if (e.key === "Shift") shieldActive = false;
+});
+
+// ===== SWORD =====
+function attackSword() {
+    if (!enemy.active || enemy.dead) return;
+
+    let dx = player.x - enemy.x;
+    let dy = player.y - enemy.y;
+    let dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < 40) {
+        enemy.health--;
+
+        if (enemy.health <= 0) {
+            enemy.dead = true;
+            enemy.deathTimer = 30;
+            hasKey = true;
+        }
+    }
 }
 
-function drawPlayer(){
-  ctx.fillStyle="#1e4fff";
-  ctx.fillRect(player.x,player.y,tileSize-8,tileSize-8);
+// ===== BOW =====
+function shootArrow() {
+    if (arrows <= 0) return;
+
+    arrows--;
+
+    let dx = player.x - enemy.x;
+    let dy = player.y - enemy.y;
+    let dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < 150 && enemy.active && !enemy.dead) {
+        enemy.health--;
+
+        if (enemy.health <= 0) {
+            enemy.dead = true;
+            enemy.deathTimer = 30;
+            hasKey = true;
+        }
+    }
 }
 
-function updateUI(){
-  document.getElementById("hearts").innerText = hearts;
-  document.getElementById("arrows").innerText = arrows;
-  document.getElementById("key").innerText = hasKey;
-}
-
+// ===== DAMAGE =====
 function damagePlayer() {
-    if (invincible || shieldActive) return;
+    if (invincible) return;
+
+    if (shieldActive) {
+        shieldDurability--;
+
+        if (shieldDurability <= 0) {
+            shieldActive = false;
+        }
+
+        return;
+    }
 
     hearts--;
+
+    // Knockback
+    let force = 20;
+    if (player.x < enemy.x) player.x -= force;
+    else player.x += force;
+
+    if (player.y < enemy.y) player.y -= force;
+    else player.y += force;
 
     if (hearts <= 0) {
         hearts = 0;
@@ -78,121 +128,79 @@ function damagePlayer() {
     invincible = true;
     setTimeout(() => invincible = false, 1000);
 }
-function update(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // Movement
-  if(keys["ArrowUp"]) { player.y -= player.speed; facing="up";}
-  if(keys["ArrowDown"]) { player.y += player.speed; facing="down";}
-  if(keys["ArrowLeft"]) { player.x -= player.speed; facing="left";}
-  if(keys["ArrowRight"]) { player.x += player.speed; facing="right";}
+// ===== UPDATE =====
+function update() {
 
-  // Enemy AI
-  if(enemy.alive){
-    let dx = player.x - enemy.x;
-    let dy = player.y - enemy.y;
-    enemy.x += dx * 0.01;
-    enemy.y += dy * 0.01;
-  }
+    if (keys["ArrowUp"]) player.y -= player.speed;
+    if (keys["ArrowDown"]) player.y += player.speed;
+    if (keys["ArrowLeft"]) player.x -= player.speed;
+    if (keys["ArrowRight"]) player.x += player.speed;
 
-  // Collision damage
-  if(enemy.alive &&
-     Math.abs(player.x-enemy.x)<40 &&
-     Math.abs(player.y-enemy.y)<40){
-       damagePlayer();
-  }
+    // Enemy movement
+    if (enemy.active && !enemy.dead) {
+        let dx = player.x - enemy.x;
+        let dy = player.y - enemy.y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
 
-  // Draw grass
-  for(let x=0;x<canvas.width;x+=tileSize){
-    for(let y=0;y<canvas.height;y+=tileSize){
-      drawTile(x,y,"#6dbf4b");
+        enemy.x += (dx / dist) * enemy.speed;
+        enemy.y += (dy / dist) * enemy.speed;
+
+        if (dist < 25) damagePlayer();
     }
-  }
 
-  // Key
-  if(!keyItem.collected){
-    drawTile(keyItem.x,keyItem.y,"gold");
-    if(Math.abs(player.x-keyItem.x)<40 &&
-       Math.abs(player.y-keyItem.y)<40){
-         keyItem.collected = true;
-         hasKey = 1;
+    // Enemy death animation
+    if (enemy.dead) {
+        enemy.deathTimer--;
+        enemy.size -= 0.5;
+
+        if (enemy.deathTimer <= 0) {
+            enemy.active = false;
+        }
     }
-  }
 
-  // Door
-  drawTile(door.x,door.y,door.locked ? "brown" : "lightgray");
+    // Door check
+    if (!doorLocked) return;
 
-  if(door.locked &&
-     hasKey &&
-     Math.abs(player.x-door.x)<40 &&
-     Math.abs(player.y-door.y)<40){
-       door.locked = false;
-  }
-
-  // Enemy
-  if(enemy.alive){
-    drawTile(enemy.x,enemy.y,"red");
-  }
-
-  // Arrows
-  arrowsShot.forEach((a,i)=>{
-    drawTile(a.x,a.y,"white");
-    if(a.dir==="up") a.y-=6;
-    if(a.dir==="down") a.y+=6;
-    if(a.dir==="left") a.x-=6;
-    if(a.dir==="right") a.x+=6;
-
-    if(enemy.alive &&
-       Math.abs(a.x-enemy.x)<30 &&
-       Math.abs(a.y-enemy.y)<30){
-         enemy.alive=false;
+    if (hasKey && player.x > 750) {
+        doorLocked = false;
+        alert("Dungeon Cleared!");
     }
-  });
-
-  drawPlayer();
-  updateUI();
-  requestAnimationFrame(update);
 }
 
-update();
+// ===== DRAW =====
+let canvas = document.querySelector("canvas");
+let ctx = canvas.getContext("2d");
 
-// Keyboard
-document.addEventListener("keydown",e=>keys[e.key]=true);
-document.addEventListener("keyup",e=>keys[e.key]=false);
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-// Touch D-Pad
-document.querySelectorAll("[data-dir]").forEach(btn=>{
-  btn.ontouchstart=()=>{
-    keys["Arrow"+btn.dataset.dir.charAt(0).toUpperCase()+btn.dataset.dir.slice(1)]=true;
-  };
-  btn.ontouchend=()=>{
-    keys["Arrow"+btn.dataset.dir.charAt(0).toUpperCase()+btn.dataset.dir.slice(1)]=false;
-  };
-});
+    // Player
+    ctx.fillStyle = "green";
+    ctx.fillRect(player.x, player.y, player.size, player.size);
 
-// Attack
-document.getElementById("attack").onclick=()=>{
-  if(enemy.alive &&
-     Math.abs(player.x-enemy.x)<50 &&
-     Math.abs(player.y-enemy.y)<50){
-       enemy.alive=false;
-  }
-};
+    // Enemy
+    if (enemy.active) {
+        ctx.fillStyle = "red";
+        ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+    }
 
-// Shield
-document.getElementById("shield").onclick=()=>{
-  shieldActive = true;
-  setTimeout(()=>shieldActive=false,500);
-};
+    // Door
+    ctx.fillStyle = doorLocked ? "brown" : "gray";
+    ctx.fillRect(760, 200, 30, 100);
 
-// Bow
-document.getElementById("bow").onclick=()=>{
-  if(arrows>0){
-    arrows--;
-    arrowsShot.push({
-      x:player.x,
-      y:player.y,
-      dir:facing
-    });
-  }
-};
+    // UI
+    ctx.fillStyle = "white";
+    ctx.fillText("Hearts: " + hearts, 20, 20);
+    ctx.fillText("Arrows: " + arrows, 20, 40);
+    ctx.fillText("Shield HP: " + shieldDurability, 20, 60);
+}
+
+// ===== GAME LOOP =====
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
