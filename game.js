@@ -56,15 +56,28 @@ function updateUI(){
   document.getElementById("key").innerText = hasKey;
 }
 
-function damagePlayer(){
-  if(invincible || shieldActive) return;
+function damagePlayer() {
+    if (invincible || shieldActive) return;
 
-  hearts--;
-  invincible = true;
+    hearts--;
 
-  setTimeout(()=>invincible=false,1000);
+    if (hearts <= 0) {
+        hearts = 0;
+        document.body.innerHTML = `
+            <div style="color:white;text-align:center;margin-top:40vh;font-size:40px;">
+                GAME OVER
+                <br><br>
+                <button onclick="location.reload()" style="font-size:20px;">
+                    Retry
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    invincible = true;
+    setTimeout(() => invincible = false, 1000);
 }
-
 function update(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
