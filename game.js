@@ -43,3 +43,9 @@ function gameLoop() {
 }
 
 gameLoop();
+
+// Touch button controls
+document.getElementById("up").addEventListener("touchstart", () => player.y--);
+document.getElementById("down").addEventListener("touchstart", () => player.y++);
+document.getElementById("left").addEventListener("touchstart", () => player.x--);
+document.getElementById("right").addEventListener("touchstart", () => player.x++);
