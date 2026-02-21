@@ -130,9 +130,9 @@ function isWall(x, y) {
 function drawRoom() {
     const layout = rooms[currentRoom].layout;
 
-    for (let row = 0; row < ROWS; row++) {
-        for (let col = 0; col < COLS; col++) {
-
+    for (let row = 0; row < rooms[currentRoom].layout.length; row++) { 
+        for (let col = 0; col < rooms[currentRoom].layout[row].length; col++) {
+            
             const tile = layout[row][col];
             const x = col * TILE;
             const y = row * TILE;
