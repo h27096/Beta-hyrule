@@ -1,202 +1,259 @@
-// ===== PLAYER =====
-let player = {
-    x: 200,
-    y: 200,
-    size: 20,
-    speed: 3
-};
+// ================================
+// BETA HYRULE ENGINE v1 - CORE
+// 640x480 | 32x32 Tiles
+// ================================
 
-let hearts = 5;
-let invincible = false;
+// ----- CANVAS SETUP -----
+const canvas = document.querySelector("canvas");
+canvas.width = 640;
+canvas.height = 480;
+const ctx = canvas.getContext("2d");
 
-let arrows = 5;
+// ----- TILE SETTINGS -----
+const TILE = 32;
+const COLS = canvas.width / TILE;   // 20
+const ROWS = canvas.height / TILE;  // 15
 
-let shieldActive = false;
-let shieldDurability = 3;
+// ----- GAME STATE -----
+let currentRoom = "town";
+let gameOver = false;
 
-// ===== ENEMY =====
-let enemy = {
-    x: 400,
-    y: 200,
-    size: 25,
-    speed: 1.2,
-    health: 3,
-    dead: false,
-    deathTimer: 0,
-    active: true
-};
-
-// ===== DUNGEON =====
-let hasKey = false;
-let doorLocked = true;
-
+// ----- INPUT -----
 let keys = {};
 
-// ===== CONTROLS =====
-document.addEventListener("keydown", (e) => {
+document.addEventListener("keydown", e => {
     keys[e.key] = true;
-
-    if (e.key === "Shift") shieldActive = true;
-
-    if (e.key === " ") attackSword();
-    if (e.key === "f") shootArrow();
 });
-
-document.addEventListener("keyup", (e) => {
+document.addEventListener("keyup", e => {
     keys[e.key] = false;
-    if (e.key === "Shift") shieldActive = false;
 });
 
-// ===== SWORD =====
-function attackSword() {
-    if (!enemy.active || enemy.dead) return;
+// ----- SPRITE SHEET (TEMP PIXEL STYLE) -----
+const sprites = {
+    player: "#2ecc71",
+    enemy: "#e74c3c",
+    wall: "#555",
+    floor: "#222",
+    doorLocked: "#8e44ad",
+    doorOpen: "#27ae60",
+    npc: "#3498db",
+    chest: "#f1c40f",
+    key: "#f39c12",
+    bigKey: "#e67e22",
+    boss: "#c0392b",
+    save: "#95a5a6"
+};
 
-    let dx = player.x - enemy.x;
-    let dy = player.y - enemy.y;
-    let dist = Math.sqrt(dx * dx + dy * dy);
+// ----- PLAYER -----
+let player = {
+    x: 5 * TILE,
+    y: 7 * TILE,
+    width: TILE,
+    height: TILE,
+    speed: 3,
+    direction: "down",
+    hearts: 5,
+    arrows: 5,
+    shieldDurability: 3,
+    invincible: false,
+    hasKey: false,
+    hasBigKey: false
+};
 
-    if (dist < 40) {
-        enemy.health--;
+// ----- SIMPLE ROOMS -----
+const rooms = {
 
-        if (enemy.health <= 0) {
-            enemy.dead = true;
-            enemy.deathTimer = 30;
-            hasKey = true;
+    town: {
+        type: "overworld",
+        layout: [
+            "####################",
+            "#..................#",
+            "#........N.........#",
+            "#..................#",
+            "#......C...........#",
+            "#..................#",
+            "#..................#",
+            "#.........S........#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..............D...#",
+            "####################"
+        ]
+    },
+
+    dungeon1: {
+        type: "dungeon",
+        layout: [
+            "####################",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#.........E........#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#..................#",
+            "#.........L........#",
+            "####################"
+        ]
+    }
+
+};
+
+// ----- HELPER FUNCTIONS -----
+function tileAt(x, y) {
+    const col = Math.floor(x / TILE);
+    const row = Math.floor(y / TILE);
+    return rooms[currentRoom].layout[row][col];
+}
+
+function isWall(x, y) {
+    return tileAt(x, y) === "#";
+}
+
+// ================================
+// END PART 1
+// ================================
+
+// ================================
+// PART 2 - RENDER + MOVEMENT
+// ================================
+
+// ----- DRAW MAP -----
+function drawRoom() {
+    const layout = rooms[currentRoom].layout;
+
+    for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+
+            const tile = layout[row][col];
+            const x = col * TILE;
+            const y = row * TILE;
+
+            if (tile === "#") {
+                ctx.fillStyle = sprites.wall;
+            } else {
+                ctx.fillStyle = sprites.floor;
+            }
+
+            ctx.fillRect(x, y, TILE, TILE);
+
+            // Special tiles
+            if (tile === "N") { // NPC
+                ctx.fillStyle = sprites.npc;
+                ctx.fillRect(x + 4, y + 4, TILE - 8, TILE - 8);
+            }
+
+            if (tile === "C") { // Chest
+                ctx.fillStyle = sprites.chest;
+                ctx.fillRect(x + 6, y + 6, TILE - 12, TILE - 12);
+            }
+
+            if (tile === "S") { // Save
+                ctx.fillStyle = sprites.save;
+                ctx.fillRect(x + 6, y + 6, TILE - 12, TILE - 12);
+            }
+
+            if (tile === "D") { // Dungeon entrance
+                ctx.fillStyle = sprites.doorLocked;
+                ctx.fillRect(x + 4, y + 4, TILE - 8, TILE - 8);
+            }
+
+            if (tile === "E") { // Enemy spawn
+                ctx.fillStyle = sprites.enemy;
+                ctx.fillRect(x + 6, y + 6, TILE - 12, TILE - 12);
+            }
+
+            if (tile === "L") { // Locked door
+                ctx.fillStyle = player.hasKey ? sprites.doorOpen : sprites.doorLocked;
+                ctx.fillRect(x + 4, y + 4, TILE - 8, TILE - 8);
+            }
         }
     }
 }
 
-// ===== BOW =====
-function shootArrow() {
-    if (arrows <= 0) return;
+// ----- DRAW PLAYER -----
+function drawPlayer() {
+    ctx.fillStyle = sprites.player;
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+}
 
-    arrows--;
+// ----- MOVEMENT -----
+function movePlayer() {
 
-    let dx = player.x - enemy.x;
-    let dy = player.y - enemy.y;
-    let dist = Math.sqrt(dx * dx + dy * dy);
+    let newX = player.x;
+    let newY = player.y;
 
-    if (dist < 150 && enemy.active && !enemy.dead) {
-        enemy.health--;
+    if (keys["ArrowUp"]) {
+        newY -= player.speed;
+        player.direction = "up";
+    }
+    if (keys["ArrowDown"]) {
+        newY += player.speed;
+        player.direction = "down";
+    }
+    if (keys["ArrowLeft"]) {
+        newX -= player.speed;
+        player.direction = "left";
+    }
+    if (keys["ArrowRight"]) {
+        newX += player.speed;
+        player.direction = "right";
+    }
 
-        if (enemy.health <= 0) {
-            enemy.dead = true;
-            enemy.deathTimer = 30;
-            hasKey = true;
-        }
+    // Collision check (corners)
+    if (!isWall(newX, player.y) &&
+        !isWall(newX + player.width - 1, player.y) &&
+        !isWall(newX, player.y + player.height - 1) &&
+        !isWall(newX + player.width - 1, player.y + player.height - 1)) {
+        player.x = newX;
+    }
+
+    if (!isWall(player.x, newY) &&
+        !isWall(player.x + player.width - 1, newY) &&
+        !isWall(player.x, newY + player.height - 1) &&
+        !isWall(player.x + player.width - 1, newY + player.height - 1)) {
+        player.y = newY;
     }
 }
 
-// ===== DAMAGE =====
-function damagePlayer() {
-    if (invincible) return;
+// ----- ROOM TRANSITIONS -----
+function checkRoomTransition() {
 
-    if (shieldActive) {
-        shieldDurability--;
+    const tile = tileAt(player.x + TILE/2, player.y + TILE/2);
 
-        if (shieldDurability <= 0) {
-            shieldActive = false;
-        }
-
-        return;
+    if (currentRoom === "town" && tile === "D") {
+        currentRoom = "dungeon1";
+        player.x = 2 * TILE;
+        player.y = 7 * TILE;
     }
 
-    hearts--;
-
-    // Knockback
-    let force = 20;
-    if (player.x < enemy.x) player.x -= force;
-    else player.x += force;
-
-    if (player.y < enemy.y) player.y -= force;
-    else player.y += force;
-
-    if (hearts <= 0) {
-        hearts = 0;
-        document.body.innerHTML = `
-            <div style="color:white;text-align:center;margin-top:40vh;font-size:40px;">
-                GAME OVER
-                <br><br>
-                <button onclick="location.reload()" style="font-size:20px;">
-                    Retry
-                </button>
-            </div>
-        `;
-        return;
+    if (currentRoom === "dungeon1" && tile === "L" && player.hasKey) {
+        alert("Dungeon Door Unlocked!");
     }
-
-    invincible = true;
-    setTimeout(() => invincible = false, 1000);
 }
 
-// ===== UPDATE =====
+// ----- GAME LOOP -----
 function update() {
+    if (gameOver) return;
 
-    if (keys["ArrowUp"]) player.y -= player.speed;
-    if (keys["ArrowDown"]) player.y += player.speed;
-    if (keys["ArrowLeft"]) player.x -= player.speed;
-    if (keys["ArrowRight"]) player.x += player.speed;
-
-    // Enemy movement
-    if (enemy.active && !enemy.dead) {
-        let dx = player.x - enemy.x;
-        let dy = player.y - enemy.y;
-        let dist = Math.sqrt(dx * dx + dy * dy);
-
-        enemy.x += (dx / dist) * enemy.speed;
-        enemy.y += (dy / dist) * enemy.speed;
-
-        if (dist < 25) damagePlayer();
-    }
-
-    // Enemy death animation
-    if (enemy.dead) {
-        enemy.deathTimer--;
-        enemy.size -= 0.5;
-
-        if (enemy.deathTimer <= 0) {
-            enemy.active = false;
-        }
-    }
-
-    // Door check
-    if (!doorLocked) return;
-
-    if (hasKey && player.x > 750) {
-        doorLocked = false;
-        alert("Dungeon Cleared!");
-    }
+    movePlayer();
+    checkRoomTransition();
 }
-
-// ===== DRAW =====
-let canvas = document.querySelector("canvas");
-let ctx = canvas.getContext("2d");
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Player
-    ctx.fillStyle = "green";
-    ctx.fillRect(player.x, player.y, player.size, player.size);
-
-    // Enemy
-    if (enemy.active) {
-        ctx.fillStyle = "red";
-        ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
-    }
-
-    // Door
-    ctx.fillStyle = doorLocked ? "brown" : "gray";
-    ctx.fillRect(760, 200, 30, 100);
-
-    // UI
-    ctx.fillStyle = "white";
-    ctx.fillText("Hearts: " + hearts, 20, 20);
-    ctx.fillText("Arrows: " + arrows, 20, 40);
-    ctx.fillText("Shield HP: " + shieldDurability, 20, 60);
+    drawRoom();
+    drawPlayer();
 }
 
-// ===== GAME LOOP =====
 function gameLoop() {
     update();
     draw();
@@ -204,3 +261,7 @@ function gameLoop() {
 }
 
 gameLoop();
+
+// ================================
+// END PART 2
+// ================================
