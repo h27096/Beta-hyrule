@@ -12,6 +12,7 @@ let hearts = 3;
 let hasKey = 0;
 let shieldActive = false;
 let facing = "down";
+let invincible = false;
 
 let player = {
   x: tileSize * 5,
@@ -55,10 +56,19 @@ function updateUI(){
   document.getElementById("key").innerText = hasKey;
 }
 
+function damagePlayer(){
+  if(invincible || shieldActive) return;
+
+  hearts--;
+  invincible = true;
+
+  setTimeout(()=>invincible=false,1000);
+}
+
 function update(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // Move
+  // Movement
   if(keys["ArrowUp"]) { player.y -= player.speed; facing="up";}
   if(keys["ArrowDown"]) { player.y += player.speed; facing="down";}
   if(keys["ArrowLeft"]) { player.x -= player.speed; facing="left";}
@@ -76,19 +86,17 @@ function update(){
   if(enemy.alive &&
      Math.abs(player.x-enemy.x)<40 &&
      Math.abs(player.y-enemy.y)<40){
-       if(!shieldActive){
-         hearts -= 0.02;
-       }
+       damagePlayer();
   }
 
-  // Draw grass tiles
+  // Draw grass
   for(let x=0;x<canvas.width;x+=tileSize){
     for(let y=0;y<canvas.height;y+=tileSize){
       drawTile(x,y,"#6dbf4b");
     }
   }
 
-  // Draw key
+  // Key
   if(!keyItem.collected){
     drawTile(keyItem.x,keyItem.y,"gold");
     if(Math.abs(player.x-keyItem.x)<40 &&
@@ -98,7 +106,7 @@ function update(){
     }
   }
 
-  // Draw door
+  // Door
   drawTile(door.x,door.y,door.locked ? "brown" : "lightgray");
 
   if(door.locked &&
@@ -108,12 +116,12 @@ function update(){
        door.locked = false;
   }
 
-  // Draw enemy
+  // Enemy
   if(enemy.alive){
     drawTile(enemy.x,enemy.y,"red");
   }
 
-  // Draw arrows
+  // Arrows
   arrowsShot.forEach((a,i)=>{
     drawTile(a.x,a.y,"white");
     if(a.dir==="up") a.y-=6;
@@ -135,9 +143,21 @@ function update(){
 
 update();
 
+// Keyboard
 document.addEventListener("keydown",e=>keys[e.key]=true);
 document.addEventListener("keyup",e=>keys[e.key]=false);
 
+// Touch D-Pad
+document.querySelectorAll("[data-dir]").forEach(btn=>{
+  btn.ontouchstart=()=>{
+    keys["Arrow"+btn.dataset.dir.charAt(0).toUpperCase()+btn.dataset.dir.slice(1)]=true;
+  };
+  btn.ontouchend=()=>{
+    keys["Arrow"+btn.dataset.dir.charAt(0).toUpperCase()+btn.dataset.dir.slice(1)]=false;
+  };
+});
+
+// Attack
 document.getElementById("attack").onclick=()=>{
   if(enemy.alive &&
      Math.abs(player.x-enemy.x)<50 &&
@@ -146,11 +166,13 @@ document.getElementById("attack").onclick=()=>{
   }
 };
 
+// Shield
 document.getElementById("shield").onclick=()=>{
   shieldActive = true;
   setTimeout(()=>shieldActive=false,500);
 };
 
+// Bow
 document.getElementById("bow").onclick=()=>{
   if(arrows>0){
     arrows--;
