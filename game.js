@@ -49,3 +49,29 @@ document.getElementById("up").addEventListener("touchstart", () => player.y--);
 document.getElementById("down").addEventListener("touchstart", () => player.y++);
 document.getElementById("left").addEventListener("touchstart", () => player.x--);
 document.getElementById("right").addEventListener("touchstart", () => player.x++);
+
+function bindButton(id, keyName) {
+  const btn = document.getElementById(id);
+
+  btn.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    keys[keyName] = true;
+  });
+
+  btn.addEventListener("touchend", () => {
+    keys[keyName] = false;
+  });
+
+  btn.addEventListener("mousedown", () => {
+    keys[keyName] = true;
+  });
+
+  btn.addEventListener("mouseup", () => {
+    keys[keyName] = false;
+  });
+}
+
+bindButton("up", "ArrowUp");
+bindButton("down", "ArrowDown");
+bindButton("left", "ArrowLeft");
+bindButton("right", "ArrowRight");
