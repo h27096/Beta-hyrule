@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>U.S.W Adventure</title>
+  <title>Beta Hyrule</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<div id="game-container">
   <canvas id="game"></canvas>
 
   <div id="controls">
-    <button id="up">⬆</button>
+    <div>
+      <button id="up">⬆</button>
+    </div>
     <div>
       <button id="left">⬅</button>
       <button id="down">⬇</button>
@@ -16,6 +20,13 @@
     </div>
   </div>
 
-  <script src="game.js"></script>
+  <div id="actions">
+    <button id="attack">⚔</button>
+    <button id="shield">🛡</button>
+  </div>
+</div>
+
+<script src="game.js"></script>
+
 </body>
 </html>
