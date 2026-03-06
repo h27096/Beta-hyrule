@@ -1,33 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"> 
-  <title>Beta Hyrule</title>
-  <link rel="stylesheet" href="style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Beta Hyrule</title>
+<link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
 <div id="game-container">
-  <canvas id="game"></canvas>
 
-  <div id="controls">
-    <div>
-      <button id="up">⬆</button>
-    </div>
-    <div>
-      <button id="left">⬅</button>
-      <button id="down">⬇</button>
-      <button id="right">➡</button>
-    </div>
+<canvas id="game"></canvas>
+
+<div id="controls">
+  <div>
+    <button id="up">⬆</button>
   </div>
 
-  <div id="actions">
-    <button id="attack">⚔</button>
-    <button id="shield">🛡</button>
+  <div>
+    <button id="left">⬅</button>
+    <button id="down">⬇</button>
+    <button id="right">➡</button>
   </div>
 </div>
 
-<script src="game.js"></script>
+<div id="actions">
+  <button id="attack">⚔</button>
+  <button id="shield">🛡</button>
+</div>
+
+</div>
+
+<script src="engine/controls.js"></script>
+<script src="engine/player.js"></script>
+<script src="engine/map.js"></script>
+<script src="engine/game.js"></script>
 
 </body>
 </html>
