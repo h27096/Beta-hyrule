@@ -20,6 +20,7 @@ drawPlayer(ctx);
 
 ctx.fillStyle="white";
 ctx.font="16px Arial";
+
 ctx.fillText("Health: "+player.health,10,20);
 ctx.fillText("Arrows: "+player.arrows,10,40);
 
