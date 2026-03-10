@@ -11,25 +11,38 @@ linkSprite.src = "assets/sprites/link.png";
 
 function movePlayer(){
 
-  if(keys["ArrowUp"]){
-    player.y--;
-    player.dir = 3;
-  }
+  let moveCooldown = 0;
 
-  if(keys["ArrowDown"]){
-    player.y++;
-    player.dir = 0;
-  }
+function movePlayer(){
 
-  if(keys["ArrowLeft"]){
-    player.x--;
-    player.dir = 1;
-  }
+if(moveCooldown > 0){
+moveCooldown--;
+return;
+}
 
-  if(keys["ArrowRight"]){
-    player.x++;
-    player.dir = 2;
-  }
+if(keys["ArrowUp"]){
+player.y--;
+player.dir = 3;
+moveCooldown = 8;
+}
+
+if(keys["ArrowDown"]){
+player.y++;
+player.dir = 0;
+moveCooldown = 8;
+}
+
+if(keys["ArrowLeft"]){
+player.x--;
+player.dir = 1;
+moveCooldown = 8;
+}
+
+if(keys["ArrowRight"]){
+player.x++;
+player.dir = 2;
+moveCooldown = 8;
+}
 
 }
 
