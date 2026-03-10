@@ -35,16 +35,13 @@ function movePlayer(){
 
 function drawPlayer(ctx){
 
-  ctx.drawImage(
-    linkSprite,
-    0,
-    player.dir * 32,
-    32,
-    32,
-    player.x * 32,
-    player.y * 32,
-    32,
-    32
-  );
+ctx.fillStyle = "red";
+
+ctx.fillRect(
+player.x * 32,
+player.y * 32,
+32,
+32
+);
 
 }
